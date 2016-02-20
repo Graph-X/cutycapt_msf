@@ -1,0 +1,45 @@
+#######################################
+#
+# Cutycapt Prep Resource Script
+#  Created by : @graphx 
+#  Very simple script to pull all identified web services from the workspace/database
+#  This is not a catch all but it does a pretty good job as long as metasploit correctly identifies a web server
+#  and add them them to /tmp/cutycapt.hosts with the correct http(s)://address:port/ format
+#
+#
+#############################################################################################
+
+<ruby>
+i = 0
+print_status "Checking all hosts in the database for open web services...."
+fname = "/tmp/cutycapt.hosts"
+target = open(fname, 'w')
+framework.db.services.each do |serv|
+	next if not serv.host
+	next if (serv.state != ServiceState::Open)
+	if (serv.name =~ /http/ or  serv.name =~ /https/ or serv.name =~ /www/)
+		if ( serv.port != 80 and serv.port != 443 and serv.name == "http")
+			i += 1
+			url = "http://#{serv.host.address}:#{serv.port}/\n"
+			target.write(url)
+		end
+		if ( serv.port != 80 and serv.port != 443 and serv.name == "https")
+			i += 1
+			url = "https://#{serv.host.address}:#{serv.port}/\n"
+			target.write(url)
+		end
+		if ( serv.port == 80 and serv.name =~ /http/ or serv.name =~ /www/)
+			i += 1
+			url = "http://#{serv.host.address}/\n"
+			target.write(url)
+		end
+		if ( serv.port == 443 and serv.name =~ /https/ or serv.name =~ /www/)
+			i += 1
+			url = "https://#{serv.host.address}/\n"
+			target.write(url)
+		end
+	end
+end
+target.close
+print_status "Found a total of #{i} urls and added to #{fname}"
+</ruby>	
